@@ -1,38 +1,29 @@
-from typing import Union
-
 from fastapi import FastAPI
-from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel
-from pydantic.utils import deep_update
+from fastapi.middleware.cors import CORSMiddleware
 
-from cache import CachedValue
+from dotenv import load_dotenv
+load_dotenv()
 
 app = FastAPI()
+
+app = FastAPI()
+origins = [
+    "http://localhost",
+    "http://localhost:5173",
+    "http://localhost:8000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
 
-
-class TodoItem(BaseModel):
-  task: str
-  completed: bool
-  timestamp: str
-
-todos = CachedValue('todos')
-
-@app.get("/todos")
-def get_todos():
-    return todos.read()
-
-@app.put('/add/{todo_id}', response_model=TodoItem)
-def add_todo(todo_id: str, new_todo: TodoItem):
-  
-  def saver(existing):
-    # raise Exception('intentional bug')
-    return deep_update(existing, jsonable_encoder({ todo_id: new_todo }))
-    # return jsonable_encoder({ todo_id: new_todo })
-  
-  todos.save(saver)
-
-  return new_todo
+from routes import todos
+app.include_router(todos.router)

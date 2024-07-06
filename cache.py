@@ -39,14 +39,8 @@ class CachedValue():
     return self._internal
   
   def save(self, action) -> bool:
-    try:
-      self._internal = action(self._internal)
-      self._store_to_disk()
-      return True
-    except:
-      print('[Cache Err] An exception occurred when updating internal value')
-
-    return False
+    self._internal = action(self._internal)
+    self._store_to_disk()
   
 ## To deal with diffs
 # When updating server, timestamp it
