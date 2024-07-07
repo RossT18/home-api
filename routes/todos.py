@@ -13,20 +13,17 @@ router = APIRouter(
 class TodoItem(BaseModel):
   task: str
   completed: bool
-  description: str
   timestamp: str
-  assignee_id: str
   creator_id: str
-  deadline: str
+  description: Optional[str] = None
+  assignee_id: Optional[str] = None
+  deadline: Optional[str] = None
 
 class PartialTodoItem(TodoItem):
   task: Optional[str] = None
   completed: Optional[bool] = None
-  description: Optional[str] = None
   timestamp: Optional[str] = None
-  assignee_id: Optional[str] = None
   creator_id: Optional[str] = None
-  deadline: Optional[str] = None
 
 todos = CachedValue('todos')
 
