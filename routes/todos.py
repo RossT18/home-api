@@ -35,7 +35,7 @@ def get_todos() -> Dict[str, TodoItem]:
 def add_todo(todo_id: str, new_todo: TodoItem):
   def add_new_todo(existing_todos):
     if todo_id in existing_todos:
-      raise HTTPException(status_code=409, detail=f'Todo ID: {todo_id} was not found when trying to update it')
+      raise HTTPException(status_code=409, detail=f'Todo ID: {todo_id} already exists')
     return deep_update(existing_todos, jsonable_encoder({ todo_id: new_todo }))
 
   todos.save(add_new_todo)
