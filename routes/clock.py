@@ -52,17 +52,17 @@ def get_date() -> Date:
     else:
       suffix = ["st", "nd", "rd"][day % 10 - 1]
     return suffix
-
-  return {
-    'a': today.strftime('%a'),
-    'A': today.strftime('%A'),
-    'd': today.strftime('%d'),
-    'b': today.strftime('%b'),
-    'B': today.strftime('%B'),
-    'm': today.strftime('%m'),
-    'Y': today.strftime('%Y'),
-    's': get_suffix(),
-  }
+  
+  return Date(
+    a=today.strftime('%a'),
+    A=today.strftime('%A'),
+    d=today.strftime('%d'),
+    b=today.strftime('%b'),
+    B=today.strftime('%B'),
+    m=today.strftime('%m'),
+    Y=today.strftime('%Y'),
+    s=get_suffix(),
+  )
 
 def get_time() -> str:
   now = get_now()

@@ -53,7 +53,10 @@ def format_bin_schedule_response(data, length=5) -> BinSchedule:
       collection: Collection = data['collections'][i]
       collections.append({ 'date': collection['date'][0:collection['date'].index('T')], 'bins': list(map(lambda rt: round_type_to_colour[rt], collection['roundTypes'])) })
 
-  return { 'collections': collections, 'next': get_next_bin(collections) }
+  return BinSchedule(
+    collections=collections,
+    next=get_next_bin(collections)
+  )
 
 @router.get('/', response_model=BinSchedule)
 def get_bin_schedule() -> BinSchedule:
