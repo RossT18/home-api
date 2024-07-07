@@ -23,7 +23,8 @@ app.add_middleware(
 def read_root():
   return {"Hello": "World"}
 
-from routes import todos, clock, bins
+from routes import todos, clock, bins, meals
 app.include_router(todos.router)
 app.include_router(clock.router)
 app.include_router(bins.router)
+app.include_router(meals.router)
