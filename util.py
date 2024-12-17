@@ -20,6 +20,62 @@ class Date(BaseModel):
   s: str
   """Date suffix"""
 
+  def get_iso(self):
+    return f'{self.Y}-{self.m}-{self.d}'
+  
+  def get_datetime(self, tzinfo=ZoneInfo('Europe/London')):
+    return datetime(int(self.Y), int(self.m), int(self.d), tzinfo=tzinfo)
+
+  def __lt__(self, other: 'Date'):
+    return self.get_datetime() < other.get_datetime()
+  def __lt__(self, other: datetime):
+    return self.get_datetime(other.tzinfo) < other
+  
+  def __gt__(self, other: 'Date'):
+    return self.get_datetime() > other.get_datetime()
+  def __gt__(self, other: datetime):
+    return self.get_datetime(other.tzinfo) > other
+  
+  def __le__(self, other: 'Date'):
+    return self.get_datetime() <= other.get_datetime()
+  def __le__(self, other: datetime):
+    return self.get_datetime(other.tzinfo) <= other
+  
+  def __ge__(self, other: 'Date'):
+    return self.get_datetime() >= other.get_datetime()
+  def __ge__(self, other: datetime):
+    return self.get_datetime(other.tzinfo) >= other
+  
+  def __eq__(self, other: 'Date'):
+    return self.get_datetime() == other.get_datetime()
+  def __eq__(self, other: datetime):
+    return self.get_datetime(other.tzinfo) == other
+  
+  def __ne__(self, other: 'Date'):
+    return self.get_datetime() != other.get_datetime()
+  def __ne__(self, other: datetime):
+    return self.get_datetime(other.tzinfo) != other
+  
+
+def datetime_to_date(dt: datetime) -> Date:
+  def get_suffix():
+    day = int(dt.strftime('%d'))
+    if 4 <= day <= 20 or 24 <= day <= 30:
+      suffix = "th"
+    else:
+      suffix = ["st", "nd", "rd"][day % 10 - 1]
+    return suffix
+  return Date(
+    a=dt.strftime('%a'),
+    A=dt.strftime('%A'),
+    d=dt.strftime('%d'),
+    b=dt.strftime('%b'),
+    B=dt.strftime('%B'),
+    m=dt.strftime('%m'),
+    Y=dt.strftime('%Y'),
+    s=get_suffix(),
+  )
+
 class DateTime(BaseModel):
   date: Date
   time: str
@@ -38,24 +94,7 @@ def get_date() -> Date:
   # 'Y': '2024',
   # 's': 'nd'
 
-  def get_suffix():
-    day = int(today.strftime('%d'))
-    if 4 <= day <= 20 or 24 <= day <= 30:
-      suffix = "th"
-    else:
-      suffix = ["st", "nd", "rd"][day % 10 - 1]
-    return suffix
-  
-  return Date(
-    a=today.strftime('%a'),
-    A=today.strftime('%A'),
-    d=today.strftime('%d'),
-    b=today.strftime('%b'),
-    B=today.strftime('%B'),
-    m=today.strftime('%m'),
-    Y=today.strftime('%Y'),
-    s=get_suffix(),
-  )
+  return datetime_to_date(today)
 
 def get_time() -> str:
   now = get_now()

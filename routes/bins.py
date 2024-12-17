@@ -34,7 +34,7 @@ class BinSchedule(BaseModel):
 
 def get_next_bin(collections: List[Collection]) -> Collection:
   today = get_date()
-  today_iso = f'{today["Y"]}-{today["m"]}-{today["d"]}'
+  today_iso = f'{today.Y}-{today.m}-{today.d}'
   for col in sorted(collections, key=lambda col: col['date']):
     if col['date'] >= today_iso:
       return col

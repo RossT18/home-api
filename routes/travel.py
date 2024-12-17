@@ -45,7 +45,6 @@ def get_directions_response(transit_mode):
   }
 
   bad_secrets = list((name for name, value in secrets.items() if value is None))
-  print(secrets.values())
   if len(bad_secrets) > 0:
     raise HTTPException(status_code=500, detail=f'Secret(s) {bad_secrets} could not be loaded')
 
