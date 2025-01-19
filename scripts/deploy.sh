@@ -1,0 +1,1 @@
+docker run -d --name home-api-container -v /data:/code/data -p 5100:5100 --env-file .env home-api-image

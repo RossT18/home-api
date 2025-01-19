@@ -1,0 +1,1 @@
+docker image rm home-api-image --force
