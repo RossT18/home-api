@@ -5,11 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI()
-origins = [
-  "http://localhost",
-  "http://localhost:5173",
-  "http://localhost:8000",
-]
+origins = ["*"]
 
 app.add_middleware(
   CORSMiddleware,
