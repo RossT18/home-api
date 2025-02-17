@@ -99,3 +99,7 @@ def get_date() -> Date:
 def get_time() -> str:
   now = get_now()
   return now.strftime("%H:%M")
+
+def is_in_past(date: str) -> bool:
+  date_obj = datetime.strptime(date, "%Y-%m-%d").date()
+  return date_obj < get_now().date()

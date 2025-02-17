@@ -6,7 +6,7 @@ from pydantic import BaseModel, RootModel
 from typing import Dict, Optional
 
 from datetime import datetime, timedelta
-from util import get_now
+from util import get_now, is_in_past
 
 class Plant(BaseModel):
   name: str
@@ -93,45 +93,53 @@ def delete_plant(plant_id: str):
 
   plants.save(del_plant)
 
-@router.post('/water/{plant_id}')
-def water_plant(plant_id: str, water_event: WaterEvent):
+@router.post('/water/{plant_ids}')
+def water_plants(plant_ids: str, water_event: WaterEvent):
   date = water_event.date
   def internal_water_plant(existing_plants: PlantList):
-    if plant_id not in existing_plants:
-      raise HTTPException(status_code=404, detail=f'Plant ID: {plant_id} could not be found to water')
-    stored_plant = existing_plants[plant_id]
-    if 'waterHistory' not in stored_plant:
-      stored_plant['waterHistory'] = []
-    stored_plant_model = Plant(**stored_plant)
-    if date not in stored_plant_model.waterHistory:
-      stored_plant_model.waterHistory.append(date)
-    else:
-      # Already watered on this day, so delete it to make un-watering available incase used by mistake
-      stored_plant_model.waterHistory.remove(date)
-    return deep_update(existing_plants, jsonable_encoder({ plant_id: stored_plant_model }))
+    plant_ids_list = [plant_id.strip() for plant_id in plant_ids.split(',')]
+    valid_plant_ids = [plant_id for plant_id in plant_ids_list if plant_id in existing_plants]
+
+    watered_plant_list: PlantList = {}
+    for plant_id in valid_plant_ids:
+      stored_plant = existing_plants[plant_id]
+      if 'waterHistory' not in stored_plant:
+        stored_plant['waterHistory'] = []
+      stored_plant_model = Plant(**stored_plant)
+      if date not in stored_plant_model.waterHistory:
+        stored_plant_model.waterHistory.append(date)
+      else:
+        # Already watered on this day, so delete it to make un-watering available incase used by mistake
+        stored_plant_model.waterHistory.remove(date)
+      
+      watered_plant_list[plant_id] = stored_plant_model
+
+    return deep_update(existing_plants, jsonable_encoder(watered_plant_list))
 
   plants.save(internal_water_plant)
 
-@router.post('/delay/{plant_id}')
-def delay_plant_water(plant_id: str, delay_event: DelayEvent):
+@router.post('/delay/{plant_ids}')
+def delay_plant_water(plant_ids: str, delay_event: DelayEvent):
   days = delay_event.days
 
   def internal_delay_plant_water(existing_plants: PlantList):
-    if plant_id not in existing_plants:
-      raise HTTPException(status_code=404, detail=f'Plant ID: {plant_id} could not be found to delay')
-    stored_plant = existing_plants[plant_id]
-    if 'delayUntil' not in stored_plant:
-      stored_plant['delayUntil'] = ''
-    stored_plant_model = Plant(**stored_plant)
+    plant_ids_list = [plant_id.strip() for plant_id in plant_ids.split(',')]
+    valid_plant_ids = [plant_id for plant_id in plant_ids_list if plant_id in existing_plants]
+  
+    delayed_plant_list: PlantList = {}
+    for plant_id in valid_plant_ids:
+      stored_plant = existing_plants[plant_id]
+      if 'delayUntil' not in stored_plant:
+        stored_plant['delayUntil'] = ''
+      stored_plant_model = Plant(**stored_plant)
+      
+      date_reference_point = get_now() if len(stored_plant_model.delayUntil) == 0 or is_in_past(stored_plant_model.delayUntil) else datetime.strptime(stored_plant_model.delayUntil, "%Y-%m-%d")
 
-    def is_in_past(date: str) -> bool:
-      date_obj = datetime.strptime(date, "%Y-%m-%d").date()
-      return date_obj < get_now().date()
-    
-    date_reference_point = get_now() if len(stored_plant_model.delayUntil) == 0 or is_in_past(stored_plant_model.delayUntil) else datetime.strptime(stored_plant_model.delayUntil, "%Y-%m-%d")
+      new_delay_date = date_reference_point + timedelta(days=days)    
+      stored_plant_model.delayUntil = new_delay_date.strftime("%Y-%m-%d")
 
-    new_delay_date = date_reference_point + timedelta(days=days)    
-    stored_plant_model.delayUntil = new_delay_date.strftime("%Y-%m-%d")
-    return deep_update(existing_plants, jsonable_encoder({ plant_id: stored_plant_model }))
+      delayed_plant_list[plant_id] = stored_plant_model
+
+    return deep_update(existing_plants, jsonable_encoder(delayed_plant_list))
 
   plants.save(internal_delay_plant_water)
