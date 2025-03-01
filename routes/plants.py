@@ -5,8 +5,8 @@ from cache import CachedValue
 from pydantic import BaseModel, RootModel
 from typing import Dict, Optional
 
-from datetime import datetime, timedelta
-from util import get_now, is_in_past
+from datetime import timedelta
+from util import convert_ISO_to_dt
 
 class Plant(BaseModel):
   name: str
@@ -32,6 +32,9 @@ class WaterEvent(BaseModel):
 
 class DelayEvent(BaseModel):
   days: int
+  """Number of days to delay the watering"""
+  date: str
+  """Date to delay the watering from in ISO format"""
 
 router = APIRouter(
   prefix='/plants',
@@ -108,6 +111,7 @@ def water_plants(plant_ids: str, water_event: WaterEvent):
       stored_plant_model = Plant(**stored_plant)
       if date not in stored_plant_model.waterHistory:
         stored_plant_model.waterHistory.append(date)
+        stored_plant_model.delayUntil = '' # Reset delay if plant is watered
       else:
         # Already watered on this day, so delete it to make un-watering available incase used by mistake
         stored_plant_model.waterHistory.remove(date)
@@ -121,6 +125,7 @@ def water_plants(plant_ids: str, water_event: WaterEvent):
 @router.post('/delay/{plant_ids}')
 def delay_plant_water(plant_ids: str, delay_event: DelayEvent):
   days = delay_event.days
+  date = delay_event.date
 
   def internal_delay_plant_water(existing_plants: PlantList):
     plant_ids_list = [plant_id.strip() for plant_id in plant_ids.split(',')]
@@ -133,9 +138,7 @@ def delay_plant_water(plant_ids: str, delay_event: DelayEvent):
         stored_plant['delayUntil'] = ''
       stored_plant_model = Plant(**stored_plant)
       
-      date_reference_point = get_now() if len(stored_plant_model.delayUntil) == 0 or is_in_past(stored_plant_model.delayUntil) else datetime.strptime(stored_plant_model.delayUntil, "%Y-%m-%d")
-
-      new_delay_date = date_reference_point + timedelta(days=days)    
+      new_delay_date = convert_ISO_to_dt(date) + timedelta(days=days)    
       stored_plant_model.delayUntil = new_delay_date.strftime("%Y-%m-%d")
 
       delayed_plant_list[plant_id] = stored_plant_model
