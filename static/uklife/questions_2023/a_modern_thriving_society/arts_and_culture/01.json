@@ -1,0 +1,150 @@
+[
+    {
+        "question": "Inigo Jones designed the Queen's House at Greenwich.",
+        "options": {
+            "A": "True",
+            "B": "False"
+        },
+        "answer": {
+            "options": "A", 
+            "text": "In the 17th century, Inigo Jones took inspiration from classical architecture to design the Queen's House at Greenwich and the Banqueting House in Whitehall in London."
+        }
+    }, 
+    {
+        "question": "Who wrote the novel Brideshead Revisited?",
+        "options": {
+            "A": "John Le Carré",
+            "B": "Harold Pinter",
+            "C": "Evelyn Waugh",
+            "D": "Ruth Rendell"
+        },
+        "answer": {
+            "options": "C", 
+            "text": "Evelyn Waugh (1903-66) wrote satirical novels, including Decline and Fall and Scoop. He is perhaps best known for Brideshead Revisited."
+        }
+    }, 
+    {
+        "question": "Who was the 17th-century organist who developed a particularly British style of church and opera music?",
+        "options": {
+            "A": "Charles Dickens",
+            "B": "Henry Purcell",
+            "C": "Sir Edward Elgar",
+            "D": "Joseph Turner"
+        },
+        "answer": {
+            "options": "B", 
+            "text": "Henry Purcell (1659-95) was the organist at Westminster Abbey. He wrote church music, operas and other pieces, and developed a British style distinct from that elsewhere in Europe. He continues to be influential on British composers."
+        }
+    }, 
+    {
+        "question": "What is the Edinburgh Fringe?",
+        "options": {
+            "A": "A precinct of shops in the city",
+            "B": "A Scottish haircut for men",
+            "C": "A group of political activators wanting Scottish independence",
+            "D": "A showcase of primarily theatre and comedy"
+        },
+        "answer": {
+            "options": "D", 
+            "text": "The Edinburgh Festival takes place in Edinburgh, Scotland, every summer. It is a series of different arts and cultural festivals, with the biggest and most well known being the Edinburgh Festival Fringe ('the Fringe'). The Fringe is a showcase of mainly theatre and comedy performances. It often shows experimental work."
+        }
+    }, 
+    {
+        "question": "Which of the following is a famous poem?",
+        "options": {
+            "A": "The Primroses",
+            "B": "The Tulips",
+            "C": "The Roses",
+            "D": "The Daffodils"
+        },
+        "answer": {
+            "options": "D", 
+            "text": "'I wander'd lonely as a cloud That floats on high o'er vales and hills When all at once I saw a crowd, A host of golden daffodils' (William Wordsworth, 1770-1850 - The Daffodils)"
+        }
+    }, 
+    {
+        "question": "Which annual flower show in London exhibits garden designs from around the world?",
+        "options": {
+            "A": "South Bank",
+            "B": "Covent Garden",
+            "C": "Chelsea",
+            "D": "Kensington"
+        },
+        "answer": {
+            "options": "C", 
+            "text": "The annual Chelsea Flower Show showcases garden design from Britain and around the world."
+        }
+    }, 
+    {
+        "question": "Who wrote Paradise Lost?",
+        "options": {
+            "A": "William Shakespeare",
+            "B": "Salman Rushdie",
+            "C": "Rider Haggard",
+            "D": "John Milton"
+        },
+        "answer": {
+            "options": "D", 
+            "text": "A number of Protestant poets wrote poems inspired by their religious views. One of these was John Milton, who wrote Paradise Lost."
+        }
+    }, 
+    {
+        "question": "Gilbert and Sullivan wrote many comic operas.",
+        "options": {
+            "A": "True",
+            "B": "False"
+        },
+        "answer": {
+            "options": "A", 
+            "text": "Gilbert and Sullivan wrote comic operas, often making fun of popular culture and politics. These operas include HMS Pinafore, The Pirates of Penzance and The Mikado."
+        }
+    }, 
+    {
+        "question": "Which of the following statements is correct?",
+        "options": {
+            "A": "Pantomimes are usually based on fairy stories.",
+            "B": "Pantomimes are usually based on famous events from history."
+        },
+        "answer": {
+            "options": "A", 
+            "text": "Pantomimes are a British tradition, with many theatres producing a pantomime at Christmas time. They are based on fairy stories and are light-hearted plays with music and comedy."
+        }
+    }, 
+    {
+        "question": "Which of the following statements is correct?",
+        "options": {
+            "A": "William Shakespeare is famous for writing sonnets and plays.",
+            "B": "William Shakespeare is famous for writing novels."
+        },
+        "answer": {
+            "options": "A", 
+            "text": "As well as plays, Shakespeare wrote many sonnets (poems which must be 14 lines long) and some longer poems."
+        }
+    }, 
+    {
+        "question": "Holman Hunt, Millais and Rossetti were members of which important group of 19th-century artists?",
+        "options": {
+            "A": "Impressionists",
+            "B": "Expressionists",
+            "C": "Abstract",
+            "D": "Pre-Raphaelites"
+        },
+        "answer": {
+            "options": "D", 
+            "text": "The Pre-Raphaelites were an important group of artists in the second half of the 19th century. They painted detailed pictures on religious or literary themes in bright colours. The group included Holman Hunt, Dante Gabriel Rossetti and Sir John Millais."
+        }
+    }, 
+    {
+        "question": "Which of the following is NOT a famous British composer?",
+        "options": {
+            "A": "Ralph Vaughan Williams",
+            "B": "Sir Edward Elgar",
+            "C": "Claude Debussy",
+            "D": "Benjamin Britten"
+        },
+        "answer": {
+            "options": "C", 
+            "text": "Ralph Vaughan Williams wrote music for orchestras and choirs. He was strongly influenced by traditional English folk music. Sir Edward Elgar (1857-1934) was born in Worcester, England. His best-known work is probably the Pomp and Circumstance Marches. Benjamin Britten (1913-76) is best known for his operas, which include Peter Grimes and Billy Budd."
+        }
+    }
+]

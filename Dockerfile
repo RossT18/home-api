@@ -10,5 +10,6 @@ COPY ./main.py /code/main.py
 COPY ./util.py /code/util.py
 COPY ./cache.py /code/cache.py
 COPY ./routes /code/routes
+COPY ./static /code/static
 
 CMD ["fastapi", "run", "main.py", "--port", "5100"]
