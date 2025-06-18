@@ -16,9 +16,11 @@ router = APIRouter(
   tags=['uklife']
 )
 
-class QuestionRequest(BaseModel):
-  count: int = 24
-  categories: list[str] = []
+class QuestionFilter(StrEnum):
+  ALL = "all"
+  INCORRECT = "incorrect"
+  UNANSWERED = "unanswered"
+  INCORRECT_OR_UNANSWERED = "incorrect_or_unanswered"
 
 class Category(StrEnum):
   A_LONG_AND_ILLUSTRIOUS_HISTORY = "a_long_and_illustrious_history"
@@ -66,15 +68,26 @@ class QuestionAnswer(BaseModel):
 
 @router.get('/questions', response_model=list[QuestionAnswer])
 def get_questions(count: Annotated[int, Query()] = 24,
-                 categories: Annotated[list[Category], Query(min_length=1)] = []) -> list[QuestionAnswer]:
+                 categories: Annotated[list[Category], Query(min_length=1)] = [],
+                 filter: Annotated[QuestionFilter, Query()] = QuestionFilter.ALL
+                 ) -> list[QuestionAnswer]:
   """
   Get a list of questions about UK life.
   """
 
   all_questions: list[QuestionAnswer] = []
 
-  for category in categories:
-    all_questions.extend(get_questions_by_category(category))
+  if filter == QuestionFilter.INCORRECT:
+    all_questions.extend(get_recent_incorrect_questions(categories))
+  elif filter == QuestionFilter.UNANSWERED:
+    all_questions.extend(get_unanswered_questions(categories))
+  elif filter == QuestionFilter.INCORRECT_OR_UNANSWERED:
+    all_questions.extend(get_recent_incorrect_questions(categories))
+    all_questions.extend(get_unanswered_questions(categories))
+  else:
+    # Default case: ALL
+    for category in categories:
+      all_questions.extend(get_questions_by_category(category))
 
   random.shuffle(all_questions)
   all_questions = all_questions[:count]
@@ -86,6 +99,10 @@ def get_categories():
   """ Get a list of categories for UK life questions.
   """
   return {category.value: category.get_friendly_name() for category in Category}
+
+@router.get('/incorrect', response_model=list[QuestionAnswer])
+def get_incorrect_questions():
+  return get_recent_incorrect_questions(list(Category))
 
 class RawResults(BaseModel):
   answers: str
@@ -110,8 +127,6 @@ def record_results(raw_results: RawResults):
     return deep_update(existing_scores, jsonable_encoder({ dt: answers }))
 
   uklife_scores.save(save_results)
-
-
 
 def deep_read_json_files(parent_folder: str) -> list[dict]:
   all_data = []
@@ -167,3 +182,95 @@ def get_questions_by_category(category: Category) -> list[QuestionAnswer]:
     qas.append(QuestionAnswer(identifier=f"{category.value}-{i}", question=question, answer=answer))
 
   return qas
+
+def get_recent_incorrect_questions(categories: list[Category]) -> list[QuestionAnswer]:
+  all_scores_raw = uklife_scores.read()
+
+  # Dict of question ids to their time answers
+  wrong_answers: dict[str,str] = {}
+
+  for dt, answers_str in all_scores_raw.items():
+    answers = json.loads(answers_str)
+    for identifier, score in answers.items():
+
+      is_given_category = False
+      for category in categories:
+        if identifier.startswith(category.value):
+          is_given_category = True
+          break
+
+      if not is_given_category:
+        # Skip questions that are not in the given categories
+        continue
+      
+      if identifier not in wrong_answers and score == False:
+        # Question not recorded and answered incorrectly
+        wrong_answers[identifier] = dt
+      elif identifier in wrong_answers:
+        # Already recorded this question as answered incorrectly
+        # It could now be answered more recently, so we either update the date if still wrong, or remove it if answered correctly
+        if wrong_answers[identifier] <= dt:
+          if score == False:
+            # Still wrong, update the date
+            wrong_answers[identifier] = dt
+          else:
+            # Answered correctly, remove from wrong answers
+            del wrong_answers[identifier]
+  
+  # Now wrong_answers contains only the questions that were answered incorrectly most recently
+  if not wrong_answers:
+    return []
+  
+  return get_questions_by_identifiers(list(wrong_answers.keys()))
+
+def get_questions_by_identifiers(identifiers: list[str]) -> list[QuestionAnswer]:
+  """
+  Get questions by identifiers.
+  """
+
+  # First group idfentifiers by category
+  # { 'category_name': [index1, index2, ...] }
+
+  grouped_identifiers = {}
+  for identifier in identifiers:
+    category_name, index = identifier.split('-')
+    if category_name not in grouped_identifiers:
+      grouped_identifiers[category_name] = []
+    grouped_identifiers[category_name].append(int(index))
+
+  # Then read the questions from the files
+  # using get_questions_by_category
+  # for each category present in the group above
+
+  all_questions = []
+
+  for category_name, indices in grouped_identifiers.items():
+    category = Category(category_name)
+    questions = get_questions_by_category(category)
+    for index in indices:
+      if index < len(questions):
+        all_questions.append(questions[index])
+      else:
+        print(f"Index {index} out of range for category {category_name}")
+
+  return all_questions
+
+def get_unanswered_questions(categories: list[Category]) -> list[QuestionAnswer]:
+  """
+  Get unanswered questions for the given categories.
+  """
+  all_questions = []
+  answered_questions_ids = set()
+
+  all_scores_raw = uklife_scores.read()
+  for dt, answers_str in all_scores_raw.items():
+    answers = json.loads(answers_str)
+    for identifier in answers.keys():
+      answered_questions_ids.add(identifier)
+
+  for category in categories:
+    questions = get_questions_by_category(category)
+    # Filter out questions that have been answered
+    unanswered_questions = [q for q in questions if q.identifier not in answered_questions_ids]
+    all_questions.extend(unanswered_questions)
+  return all_questions
