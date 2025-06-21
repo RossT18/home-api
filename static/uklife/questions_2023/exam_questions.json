@@ -1,0 +1,93 @@
+[
+  {
+    "question": "Who was the father of Queen Elizabeth I?",
+    "options": {
+      "A": "Edward I",
+      "B": "Henry V",
+      "C": "Henry VII",
+      "D": "Henry VIII"
+    },
+    "answer": {
+      "options": "D",
+      "text": "The father of Queen Elizabeth I was Henry VIII."
+    }
+  },
+  {
+    "question": "Which king was executed in 1649?",
+    "options": {
+      "A": "James I",
+      "B": "Charles II",
+      "C": "James VII",
+      "D": "Charles I"
+    },
+    "answer": {
+      "options": "D",
+      "text": "Charles I was executed in 1649."
+    }
+  },
+  {
+    "question": "Which of the following castles is located in Scotland?",
+    "options": {
+      "A": "Crathes Castle",
+      "B": "Caernarfon Castle",
+      "C": "Bodiam Castle",
+      "D": "Powis Castle"
+    },
+    "answer": {
+      "options": "A",
+      "text": "Crathes Castle is located in Scotland."
+    }
+  },
+  {
+    "question": "What was the religion of the Puritans?",
+    "options": {
+      "A": "Hindu",
+      "B": "Catholic",
+      "C": "Sikh",
+      "D": "Protestant"
+    },
+    "answer": {
+      "options": "D",
+      "text": "The Puritans were a group of Protestants who advocated strict and simple religious doctrine and worship."
+    }
+  },
+  {
+    "question": "Who came from the Netherlands to become the British monarch?",
+    "options": {
+      "A": "William II",
+      "B": "Charles II",
+      "C": "Edward II",
+      "D": "George II"
+    },
+    "answer": {
+      "options": "B",
+      "text": "In May 1660, Parliament invited Charles II to come back from exile in the Netherlands. He was crowned King Charles II of England, Wales, Scotland and Ireland."
+    }
+  },
+  {
+    "question": "What are TWO responsibilities of the monarch?",
+    "options": {
+      "A": "To appoint the members of the cabinet",
+      "B": "To advise, warn and encourage the Prime Minister‘s decisions on government policies",
+      "C": "To debate important national issues",
+      "D": "To appoint the government"
+    },
+    "answer": {
+      "options": "B, D",
+      "text": "The monarch does not rule the country but appoints the government, which the people have chosen in a democratic election. The monarch also has regular meetings with the Prime Minister and can advise, warn and encourage, but the decisions on government policies are made by the Prime Minister and cabinet."
+    }
+  },
+  {
+    "question": "What did the Factories Act of 1847 introduce?",
+    "options": {
+      "A": "It limited the number of hours that everybody could work to 10 hours per day.",
+      "B": "It increased the number of hours that women and children could work to 12 hours per day.",
+      "C": "It increased the number of hours that men could work to 12 hours per day.",
+      "D": "It limited the number of hours that women and children could work to 10 hours per day."
+    },
+    "answer": {
+      "options": "D",
+      "text": "The Factories Act of 1847 limited the number of hours that women and children could work to 10 hours per day.},"
+    }
+  }
+]

@@ -28,6 +28,7 @@ class Category(StrEnum):
   UK_GOVERNMENT_THE_LAW_AND_YOUR_ROLE = "uk_government_the_law_and_your_role"
   THE_VALUES_AND_PRINCIPLES_OF_THE_UK = "the_values_and_principles_of_the_uk"
   WHAT_IS_THE_UK = "what_is_the_uk"
+  EXAM_QUESTIONS = "exam_questions"
 
   def get_friendly_name(self) -> str:
     """
@@ -38,7 +39,8 @@ class Category(StrEnum):
       self.A_MODERN_THRIVING_SOCIETY: "A modern thriving society",
       self.UK_GOVERNMENT_THE_LAW_AND_YOUR_ROLE: "UK government, the law and your role",
       self.THE_VALUES_AND_PRINCIPLES_OF_THE_UK: "The values and principles of the UK",
-      self.WHAT_IS_THE_UK: "What is the UK"
+      self.WHAT_IS_THE_UK: "What is the UK",
+      self.EXAM_QUESTIONS: "Exam questions"
     }.get(self, "Unknown Category")
   
 
@@ -48,7 +50,8 @@ class Category(StrEnum):
       self.A_MODERN_THRIVING_SOCIETY: False,
       self.UK_GOVERNMENT_THE_LAW_AND_YOUR_ROLE: False,
       self.THE_VALUES_AND_PRINCIPLES_OF_THE_UK: True,
-      self.WHAT_IS_THE_UK: True
+      self.WHAT_IS_THE_UK: True,
+      self.EXAM_QUESTIONS: True
     }.get(self, False)
 
 class Answer(BaseModel):
