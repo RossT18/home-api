@@ -10,6 +10,11 @@ from pydantic.utils import deep_update
 
 from cache import CachedValue
 
+RESET_DATETIMES = [
+  "2025-06-22T22:00:00.000Z",
+  "2025-06-24T17:00:00.000Z"
+]
+
 
 router = APIRouter(
   prefix='/uklife',
@@ -267,6 +272,11 @@ def get_unanswered_questions(categories: list[Category]) -> list[QuestionAnswer]
 
   all_scores_raw = uklife_scores.read()
   for dt, answers_str in all_scores_raw.items():
+
+    # if dt is before any reset datetime, skip it
+    if any(dt < reset for reset in RESET_DATETIMES):
+      continue
+
     answers = json.loads(answers_str)
     for identifier in answers.keys():
       answered_questions_ids.add(identifier)
