@@ -93,7 +93,7 @@ def format_bus_directions_response(response) -> List[BusInfo]:
   }
   """
 
-  VALID_BUSES = ['1', '3']
+  VALID_BUSES = ['8', 'A the busway']
   buses_info: Dict[str, BusInfo] = {}
 
   routes = response['routes']
