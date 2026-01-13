@@ -1,78 +1,18 @@
-from enum import StrEnum
+import os
+from app.services.life_in_uk_test.models import QuestionAnswer, Category, QuestionFilter, RawResults, Question, Answer
 from typing import Annotated
 from fastapi import APIRouter, Query
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel
 import json
-import os
 import random
 from pydantic.utils import deep_update
 
-from cache import CachedValue
-
-RESET_DATETIMES = [
-  "2025-06-22T22:00:00.000Z",
-  "2025-06-24T17:00:00.000Z"
-]
-
+from app.cache import CachedValue
 
 router = APIRouter(
   prefix='/uklife',
   tags=['uklife']
 )
-
-class QuestionFilter(StrEnum):
-  ALL = "all"
-  INCORRECT = "incorrect"
-  UNANSWERED = "unanswered"
-  INCORRECT_OR_UNANSWERED = "incorrect_or_unanswered"
-
-class Category(StrEnum):
-  A_LONG_AND_ILLUSTRIOUS_HISTORY = "a_long_and_illustrious_history"
-  A_MODERN_THRIVING_SOCIETY = "a_modern_thriving_society"
-  UK_GOVERNMENT_THE_LAW_AND_YOUR_ROLE = "uk_government_the_law_and_your_role"
-  THE_VALUES_AND_PRINCIPLES_OF_THE_UK = "the_values_and_principles_of_the_uk"
-  WHAT_IS_THE_UK = "what_is_the_uk"
-  EXAM_QUESTIONS = "exam_questions"
-
-  def get_friendly_name(self) -> str:
-    """
-    Get a friendly name for the category.
-    """
-    return {
-      self.A_LONG_AND_ILLUSTRIOUS_HISTORY: "A long and illustrious history",
-      self.A_MODERN_THRIVING_SOCIETY: "A modern thriving society",
-      self.UK_GOVERNMENT_THE_LAW_AND_YOUR_ROLE: "UK government, the law and your role",
-      self.THE_VALUES_AND_PRINCIPLES_OF_THE_UK: "The values and principles of the UK",
-      self.WHAT_IS_THE_UK: "What is the UK",
-      self.EXAM_QUESTIONS: "Exam questions"
-    }.get(self, "Unknown Category")
-  
-
-  def is_file(self) -> bool:
-    return {
-      self.A_LONG_AND_ILLUSTRIOUS_HISTORY: False,
-      self.A_MODERN_THRIVING_SOCIETY: False,
-      self.UK_GOVERNMENT_THE_LAW_AND_YOUR_ROLE: False,
-      self.THE_VALUES_AND_PRINCIPLES_OF_THE_UK: True,
-      self.WHAT_IS_THE_UK: True,
-      self.EXAM_QUESTIONS: True
-    }.get(self, False)
-
-class Answer(BaseModel):
-  """List of options and text explanation."""
-  options: list[str]
-  text: str
-
-class Question(BaseModel):
-  category: Category
-  text: str
-  options: dict[str, str]
-
-class QuestionAnswer(BaseModel):
-  identifier: str
-  question: Question
-  answer: Answer
 
 @router.get('/questions', response_model=list[QuestionAnswer])
 def get_questions(count: Annotated[int, Query()] = 24,
@@ -104,7 +44,8 @@ def get_questions(count: Annotated[int, Query()] = 24,
 
 @router.get('/categories', response_model=dict[Category, str])
 def get_categories():
-  """ Get a list of categories for UK life questions.
+  """
+  Get a list of categories for UK life questions.
   """
   return {category.value: category.get_friendly_name() for category in Category}
 
@@ -112,9 +53,6 @@ def get_categories():
 def get_incorrect_questions():
   return get_recent_incorrect_questions(list(Category))
 
-class RawResults(BaseModel):
-  answers: str
-  dt: str
 
 uklife_scores = CachedValue('uklife_scores')
 
@@ -135,6 +73,12 @@ def record_results(raw_results: RawResults):
     return deep_update(existing_scores, jsonable_encoder({ dt: answers }))
 
   uklife_scores.save(save_results)
+
+# TODO: Store this instead
+RESET_DATETIMES = [
+  "2025-06-22T22:00:00.000Z",
+  "2025-06-24T17:00:00.000Z"
+]
 
 def deep_read_json_files(parent_folder: str) -> list[dict]:
   all_data = []
@@ -175,12 +119,12 @@ def get_questions_by_category(category: Category) -> list[QuestionAnswer]:
   data = []
 
   if category.is_file():
-    file_path = f"static/uklife/questions_2023/{category.value}.json"
+    file_path = f"app/resources/uklife/questions_2023/{category.value}.json"
     if not os.path.exists(file_path):
       raise FileNotFoundError(f"File for category {category} not found at {file_path}")
     data = read_json_file(file_path)
   else:
-    file_path = f"static/uklife/questions_2023/{category.value}"
+    file_path = f"app/resources/uklife/questions_2023/{category.value}"
     data = deep_read_json_files(file_path)
 
   qas = []
@@ -210,15 +154,15 @@ def get_recent_incorrect_questions(categories: list[Category]) -> list[QuestionA
       if not is_given_category:
         # Skip questions that are not in the given categories
         continue
-      
-      if identifier not in wrong_answers and score == False:
+
+      if identifier not in wrong_answers and not score:
         # Question not recorded and answered incorrectly
         wrong_answers[identifier] = dt
       elif identifier in wrong_answers:
         # Already recorded this question as answered incorrectly
         # It could now be answered more recently, so we either update the date if still wrong, or remove it if answered correctly
         if wrong_answers[identifier] <= dt:
-          if score == False:
+          if not score:
             # Still wrong, update the date
             wrong_answers[identifier] = dt
           else:

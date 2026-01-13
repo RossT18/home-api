@@ -1,31 +1,15 @@
+from app.cache import CachedValue
+from app.services.meals.models import MealPlan, Meal, PartialMeal, Archive, ArchiveEntry
 from fastapi import APIRouter, HTTPException
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel, RootModel
 from pydantic.utils import deep_update
-from typing import Dict, Optional
-from cache import CachedValue
 
-class Meal(BaseModel):
-  name: str
-  date: str
-  mealTime: str
-MealPlan = RootModel[Dict[str, Meal]]
-
-class PartialMeal(Meal):
-  name: Optional[str] = None
-  date: Optional[str] = None
-  mealTime: Optional[str] = None
-
-class ArchiveEntry(BaseModel):
-  minDate: str
-  maxDate: str
-  mealPlan: MealPlan
-Archive = RootModel[Dict[str, ArchiveEntry]]
 
 router = APIRouter(
   prefix='/meals',
   tags=['meals']
 )
+
 
 meal_plan = CachedValue('meal_plan')
 meal_archive = CachedValue('meal_archive')

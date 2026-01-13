@@ -1,15 +1,11 @@
 FROM python:3.13
 
-WORKDIR /code
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-COPY ./requirements.txt /code/requirements.txt
+COPY . /app
 
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+WORKDIR /app
+RUN uv sync --frozen --no-cache
 
-COPY ./main.py /code/main.py
-COPY ./util.py /code/util.py
-COPY ./cache.py /code/cache.py
-COPY ./routes /code/routes
-COPY ./static /code/static
-
-CMD ["fastapi", "run", "main.py", "--port", "5100"]
+CMD ["/app/.venv/bin/fastapi", "run", "app/main.py", "--port", "5100"]
