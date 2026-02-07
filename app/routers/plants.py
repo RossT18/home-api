@@ -1,40 +1,11 @@
+from app.services.plants.models import PlantList, Plant, PartialPlant, WaterEvent, DelayEvent
 from fastapi import APIRouter, HTTPException
 from fastapi.encoders import jsonable_encoder
 from pydantic.utils import deep_update
-from cache import CachedValue
-from pydantic import BaseModel, RootModel
-from typing import Dict, Optional
+from app.cache import CachedValue
 
 from datetime import timedelta
-from util import convert_ISO_to_dt
-
-class Plant(BaseModel):
-  name: str
-  iconName: str
-  purchaseDate: str
-  waterFrequency: int
-  lightConditions: str
-  waterHistory: list[str]
-  delayUntil: str
-PlantList = RootModel[Dict[str, Plant]]
-
-class PartialPlant(BaseModel):
-  name: Optional[str] = None
-  iconName: Optional[str] = None
-  purchaseDate: Optional[str] = None
-  waterFrequency: Optional[int] = None
-  lightConditions: Optional[str] = None
-  waterHistory: Optional[list[str]] = None
-  delayUntil: Optional[str] = None
-
-class WaterEvent(BaseModel):
-  date: str
-
-class DelayEvent(BaseModel):
-  days: int
-  """Number of days to delay the watering"""
-  date: str
-  """Date to delay the watering from in ISO format"""
+from app.util import convert_ISO_to_dt
 
 router = APIRouter(
   prefix='/plants',
@@ -42,7 +13,6 @@ router = APIRouter(
 )
 
 plants = CachedValue('plants')
-
 
 @router.get('/', response_model=PlantList)
 def get_plants():

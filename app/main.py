@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.routers import bins, clock, disk_info, meals, plants, todos, travel, uklife, weather
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -8,7 +9,7 @@ app = FastAPI()
 origins = ["*"]
 
 app.add_middleware(
-  CORSMiddleware,
+  CORSMiddleware,  # ty:ignore[invalid-argument-type]
   allow_origins=origins,
   allow_credentials=True,
   allow_methods=["*"],
@@ -19,7 +20,6 @@ app.add_middleware(
 def read_root():
   return {"Hello": "World"}
 
-from routes import bins, clock, disk_info, meals, plants, todos, travel, uklife, weather
 
 app.include_router(bins.router)
 app.include_router(clock.router)
@@ -30,3 +30,7 @@ app.include_router(todos.router)
 app.include_router(travel.router)
 app.include_router(uklife.router)
 app.include_router(weather.router)
+
+if __name__ == "__main__":
+  import uvicorn
+  uvicorn.run(app, host="0.0.0.0", port=5100)

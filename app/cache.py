@@ -26,7 +26,7 @@ class CachedValue():
     try:
       with open(self._filepath, "r") as df:
         self._internal = json.load(df)
-    except:
+    except Exception as _:
       # Error loading existing file, overwriting with initial value...
       # But store a backup first
       now_str = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d-%H-%M-%S")
@@ -38,7 +38,7 @@ class CachedValue():
   def read(self):
     return self._internal
   
-  def save(self, action) -> bool:
+  def save(self, action) -> None:
     self._internal = action(self._internal)
     self._store_to_disk()
   

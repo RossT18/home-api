@@ -26,35 +26,46 @@ class Date(BaseModel):
   def get_datetime(self, tzinfo=ZoneInfo('Europe/London')):
     return datetime(int(self.Y), int(self.m), int(self.d), tzinfo=tzinfo)
 
-  def __lt__(self, other: 'Date'):
-    return self.get_datetime() < other.get_datetime()
-  def __lt__(self, other: datetime):
-    return self.get_datetime(other.tzinfo) < other
-  
-  def __gt__(self, other: 'Date'):
-    return self.get_datetime() > other.get_datetime()
-  def __gt__(self, other: datetime):
-    return self.get_datetime(other.tzinfo) > other
-  
-  def __le__(self, other: 'Date'):
-    return self.get_datetime() <= other.get_datetime()
-  def __le__(self, other: datetime):
-    return self.get_datetime(other.tzinfo) <= other
-  
-  def __ge__(self, other: 'Date'):
-    return self.get_datetime() >= other.get_datetime()
-  def __ge__(self, other: datetime):
-    return self.get_datetime(other.tzinfo) >= other
-  
-  def __eq__(self, other: 'Date'):
-    return self.get_datetime() == other.get_datetime()
-  def __eq__(self, other: datetime):
-    return self.get_datetime(other.tzinfo) == other
-  
-  def __ne__(self, other: 'Date'):
-    return self.get_datetime() != other.get_datetime()
-  def __ne__(self, other: datetime):
-    return self.get_datetime(other.tzinfo) != other
+  def __lt__(self, other: object):
+    if isinstance(other, Date):
+      return self.get_datetime() < other.get_datetime()
+    if isinstance(other, datetime):
+      return self.get_datetime(other.tzinfo) < other
+    return NotImplemented
+
+  def __gt__(self, other: object):
+    if isinstance(other, Date):
+      return self.get_datetime() > other.get_datetime()
+    if isinstance(other, datetime):
+      return self.get_datetime(other.tzinfo) > other
+    return NotImplemented
+
+  def __le__(self, other: object):
+    if isinstance(other, Date):
+      return self.get_datetime() <= other.get_datetime()
+    if isinstance(other, datetime):
+      return self.get_datetime(other.tzinfo) <= other
+    return NotImplemented
+
+  def __ge__(self, other: object):
+    if isinstance(other, Date):
+      return self.get_datetime() >= other.get_datetime()
+    if isinstance(other, datetime):
+      return self.get_datetime(other.tzinfo) >= other
+    return NotImplemented
+
+  def __eq__(self, other: object):
+    if isinstance(other, Date):
+      return self.get_datetime() == other.get_datetime()
+    if isinstance(other, datetime):
+      return self.get_datetime(other.tzinfo) == other
+    return NotImplemented
+
+  def __ne__(self, other: object):
+    eq = self.__eq__(other)
+    if eq is NotImplemented:
+      return NotImplemented
+    return not eq
   
 
 def datetime_to_date(dt: datetime) -> Date:

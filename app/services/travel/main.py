@@ -1,41 +1,17 @@
-from fastapi import APIRouter, HTTPException
-from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel
+from dotenv import load_dotenv
+from app.services.travel.models import BusInfo
+from fastapi import HTTPException
 from typing import List, Dict
 import requests
 import urllib
 import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from dotenv import load_dotenv
 
 load_dotenv()
 
-router = APIRouter(
-  prefix='/travel',
-  tags=['travel']
-)
-
-class Directions(BaseModel):
-  duration: int
-  """Duration of journey in seconds"""
-  arrival_time: int
-  """Arrival timestamp"""
-  departure_time: int
-  """Departure timestamp"""
-  friendly_duration: str
-  """Duration with units e.g. 37 mins"""
-  friendly_arrival_time: str
-  """Arrival time in the format HH:MM"""
-  friendly_departure_time: str
-  """Departure time in the format HH:MM"""
-
-class BusInfo(Directions):
-  bus_name: str
-  bus_departure_time: int
-  """Bus's departure timestamp from nearest stop"""
-
 def get_directions_response(transit_mode):
+  # TODO: Make origin/destination configurable
   secrets = {
     "gmaps_api_key": os.getenv('GOOGLE_MAPS_API_KEY'),
     "origin_lat": os.getenv('LAT'),
@@ -93,6 +69,7 @@ def format_bus_directions_response(response) -> List[BusInfo]:
   }
   """
 
+  # TODO: Support all buses in response, or accept a list of preferred buses
   VALID_BUSES = ['8', 'A the busway']
   buses_info: Dict[str, BusInfo] = {}
 
@@ -137,9 +114,3 @@ def format_bus_directions_response(response) -> List[BusInfo]:
     )
 
   return list(buses_info.values())
-
-@router.get('/bus', response_model=List[BusInfo])
-def get_bus_journey_info() -> List[BusInfo]:
-  bus_directions_response = get_directions_response('bus')
-  formatted = format_bus_directions_response(bus_directions_response)
-  return jsonable_encoder(formatted)
