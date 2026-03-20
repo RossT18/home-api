@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from app.services.travel.models import BusInfo
+from app.services.travel.models import BusInfo, Point, TravelMode
 from fastapi import HTTPException
 from typing import List, Dict
 import requests
@@ -10,24 +10,15 @@ from zoneinfo import ZoneInfo
 
 load_dotenv()
 
-def get_directions_response(transit_mode):
-  # TODO: Make origin/destination configurable
-  secrets = {
-    "gmaps_api_key": os.getenv('GOOGLE_MAPS_API_KEY'),
-    "origin_lat": os.getenv('LAT'),
-    "origin_lon": os.getenv('LON'),
-    "destination_lat": os.getenv('CAMB_LAT'),
-    "destination_lon": os.getenv('CAMB_LON')   
-  }
-
-  bad_secrets = list((name for name, value in secrets.items() if value is None))
-  if len(bad_secrets) > 0:
-    raise HTTPException(status_code=500, detail=f'Secret(s) {bad_secrets} could not be loaded')
+def get_directions_response(transit_mode: TravelMode, origin: Point, destination: Point):
+  gmaps_api_key = os.getenv('GOOGLE_MAPS_API_KEY')
+  if gmaps_api_key is None:
+    raise HTTPException(status_code=500, detail='Secret GOOGLE_MAPS_API_KEY could not be loaded')
 
   params_builder = {
-    'key': secrets["gmaps_api_key"],
-    'origin': f'{secrets["origin_lat"]},{secrets["origin_lon"]}',
-    'destination': f'{secrets["destination_lat"]},{secrets["destination_lon"]}',
+    'key': gmaps_api_key,
+    'origin': f'{origin.latitude},{origin.longitude}',
+    'destination': f'{destination.latitude},{destination.longitude}',
     'mode': 'transit',
     'transit_mode': transit_mode,
     'alternatives': 'true',
@@ -47,7 +38,7 @@ def get_friendly_time(timestamp, timezone) -> str:
   t = datetime.fromtimestamp(timestamp, ZoneInfo(timezone))
   return f'{str(t.hour).zfill(2)}:{str(t.minute).zfill(2)}'
 
-def format_bus_directions_response(response) -> List[BusInfo]:
+def format_bus_directions_response(response, accepted_buses: List[str] = []) -> List[BusInfo]:
   # data['routes'] is an array of objects (these are route alternatives)
   # data['routes'][X]['legs'] is the only relevant information
   # ...['legs'] is an array which should contain one object (direct from origin to destination) referred to below as 'leg'
@@ -69,8 +60,6 @@ def format_bus_directions_response(response) -> List[BusInfo]:
   }
   """
 
-  # TODO: Support all buses in response, or accept a list of preferred buses
-  VALID_BUSES = ['8', 'A the busway']
   buses_info: Dict[str, BusInfo] = {}
 
   routes = response['routes']
@@ -94,7 +83,9 @@ def format_bus_directions_response(response) -> List[BusInfo]:
       bus_name = transit_details['line']['short_name']
       break
 
-    invalid_bus = bus_departure_time <= 0 or bus_name not in VALID_BUSES
+    in_accepted_buses = len(accepted_buses) == 0 or bus_name in accepted_buses
+
+    invalid_bus = bus_departure_time <= 0 or not in_accepted_buses
     earlier_bus_already_found = bus_name in buses_info and buses_info[bus_name].arrival_time < arrival_time
 
     if invalid_bus or earlier_bus_already_found:
