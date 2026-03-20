@@ -1,5 +1,6 @@
+from app.services.shared.models import Point
 from app.services.travel.main import get_directions_response, format_bus_directions_response
-from app.services.travel.models import BusInfo, Point, TravelMode
+from app.services.travel.models import BusInfo, TravelMode
 from fastapi import APIRouter
 from fastapi.encoders import jsonable_encoder
 from typing import List
