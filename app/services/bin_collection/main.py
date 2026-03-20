@@ -19,34 +19,20 @@ def get_bin_url_response():
     raise HTTPException(status_code=r.status_code, detail=f'Error retrieving bin schedule. Reason: {r.reason}') 
   return r.json()
 
-def get_next_bin(collections: List[Collection]) -> Collection:
+def format_bin_schedule_response(data, length=5) -> BinSchedule:
+  sorted_collections = sorted(data['collections'], key=lambda col: col['date'])
+  
   today = get_date()
   today_iso = f'{today.Y}-{today.m}-{today.d}'
-  for col in sorted(collections, key=lambda col: col.date):
-    if col.date >= today_iso:
-      return col
-  raise HTTPException(status_code=404, detail='Next bin collection cannot be found')
+  # Filter out past collections, keeping only those that are today or in the future
+  filtered_collections = list(filter(lambda col: col['date'] >= today_iso, sorted_collections))[:length]
 
-def format_bin_schedule_response(data, length=5) -> BinSchedule:
-  round_type_to_colour = {
-    'DOMESTIC': 'black',
-    'RECYCLE': 'blue',
-    'ORGANIC': 'green',
-    'FOOD': 'brown'
-  }
-  collections: List[Collection] = []
-  for i in range(len(data['collections'])):
-      if i >= length:
-        break
-      collection: Collection = data['collections'][i]
+  collections: List[Collection] = list(map(lambda raw: Collection(
+    date=raw['date'][0:raw['date'].index('T')], # Extract the date part of the ISO string
+    bins=raw['roundTypes']
+  ), filtered_collections))
 
-      collections.append(Collection(
-        date=collection['date'][0:collection['date'].index('T')],
-        bins=list(map(lambda rt: round_type_to_colour[rt], collection['roundTypes']))
-      ))
+  if len(collections) == 0:
+    raise HTTPException(status_code=404, detail='No upcoming bin collections found')
 
-
-  return BinSchedule(
-    collections=collections,
-    next=get_next_bin(collections)
-  )
+  return BinSchedule(collections=collections, next=collections[0])
