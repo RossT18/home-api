@@ -1,13 +1,10 @@
+from app.services.shared.models import Point
 from app.services.weather.models import WeatherType, Weather
 from fastapi import HTTPException
 import requests
 from datetime import datetime
 from zoneinfo import ZoneInfo
-import os
-from dotenv import load_dotenv
 
-
-load_dotenv()
 
 def get_weather_type_from_code(code: int) -> WeatherType:
   def get_icon_url(icon_name):
@@ -50,15 +47,10 @@ def get_weather_type_from_code(code: int) -> WeatherType:
   }
   return codes[code] if code in codes else WeatherType(name='Weather Unavailable', icon=get_icon_url(''))
 
-def get_weather_response():
-  lat = os.getenv('LAT')
-  lon = os.getenv('LON')
-  if lat is None or lon is None:
-    raise HTTPException(status_code=500, detail='Secret weather data (LOCATION) could not be loaded')
-
+def get_weather_response(location: Point):
   open_meteo_api_params = {
-    "latitude": str(lat),
-    "longitude": str(lon),
+    "latitude": str(location.latitude),
+    "longitude": str(location.longitude),
     "current": "temperature_2m,apparent_temperature,precipitation,weather_code",
     "hourly": "temperature_2m,apparent_temperature,precipitation,weather_code",
     "daily": "temperature_2m_max,temperature_2m_min,sunrise,sunset",

@@ -1,5 +1,6 @@
+from app.services.shared.models import Point
 from dotenv import load_dotenv
-from app.services.travel.models import BusInfo, Point, TravelMode
+from app.services.travel.models import BusInfo, TravelMode
 from fastapi import HTTPException
 from typing import List, Dict
 import requests
