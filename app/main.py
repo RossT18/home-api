@@ -18,7 +18,11 @@ app.add_middleware(
 
 @app.get("/")
 def read_root():
-  return {"Hello": "World"}
+  return health()
+
+@app.get('/health')
+def health():
+  return {"status": "healthy"}
 
 
 app.include_router(bins.router)
