@@ -5,3 +5,5 @@ data/
 .vscode/
 .ruff_cache/
 .venv/
+
+*.db

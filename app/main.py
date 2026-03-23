@@ -1,12 +1,30 @@
+from contextlib import asynccontextmanager
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import sqlite3
+from app.database import database_path
 from app.routers import bins, clock, disk_info, meals, plants, todos, travel, uklife, weather
 
-from dotenv import load_dotenv
+
 load_dotenv()
 
-app = FastAPI()
-origins = ["*"]
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    with sqlite3.connect(database_path) as conn:
+        # init_todos_table(conn)
+        # init_users_table(conn)
+        meals.init_meals_table(conn)
+        conn.commit()
+    yield
+    # Shutdown logic (e.g. closing a connection pool) would go here
+
+app = FastAPI(
+  title='Home API',
+  lifespan=lifespan
+)
+
+origins = ['*']
 
 app.add_middleware(
   CORSMiddleware,  # ty:ignore[invalid-argument-type]

@@ -1,8 +1,7 @@
-from app.cache import CachedValue
-from app.services.meals.models import MealPlan, Meal, PartialMeal, Archive, ArchiveEntry
-from fastapi import APIRouter, HTTPException
-from fastapi.encoders import jsonable_encoder
-from pydantic.utils import deep_update
+from app.database import get_db
+import sqlite3
+from app.services.meals.models import Meal, PartialMeal
+from fastapi import APIRouter, HTTPException, Depends
 
 
 router = APIRouter(
@@ -10,64 +9,75 @@ router = APIRouter(
   tags=['meals']
 )
 
+def init_meals_table(conn: sqlite3.Connection):
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS meals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            datetime TEXT NOT NULL,
+            mealTime TEXT NOT NULL
+        );
+    ''')
 
-meal_plan = CachedValue('meal_plan')
-meal_archive = CachedValue('meal_archive')
+def row_to_meal(row: sqlite3.Row) -> Meal:
+    return Meal(
+        id=row['id'],
+        name=row['name'],
+        datetime=row['datetime'],
+        mealTime=row['mealTime']
+    )
 
-@router.get('/plan', response_model=MealPlan)
-def get_meal_plan() -> MealPlan:
-  return jsonable_encoder(meal_plan.read())
 
-@router.put('/add/{meal_id}', status_code=201)
-def add_meal(meal_id: str, meal: Meal):
-  def add_to_plan(existing_plan):
-    if meal_id in existing_plan:
-      raise HTTPException(status_code=409, detail=f'Meal ID: {meal_id} already exists')
-    return deep_update(existing_plan, jsonable_encoder({ meal_id: meal }))
+@router.post("/", response_model=Meal, status_code=201)
+def create_meal(payload: Meal, db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.execute(
+        "INSERT INTO meals (name, datetime, mealTime) VALUES (?, ?, ?)",
+        (payload.name, payload.datetime, payload.mealTime),
+    )
+    db.commit()
+    row = db.execute("SELECT * FROM meals WHERE id = ?", (cursor.lastrowid,)).fetchone()
+    return row_to_meal(row)
 
-  meal_plan.save(add_to_plan)
 
-@router.patch('/update/{meal_id}')
-def edit_meal(meal_id: str, meal: PartialMeal):
-  def edit_plan(existing_plan):
-    if meal_id not in existing_plan:
-      raise HTTPException(status_code=404, detail=f'Meal ID: {meal_id} could not be found to update')
-    stored_meal_model = Meal(**existing_plan[meal_id])
-    update_meal_data = meal.model_dump(exclude_unset=True)
-    updated_meal = stored_meal_model.model_copy(update=update_meal_data)
-    return deep_update(existing_plan, jsonable_encoder({ meal_id: updated_meal }))
-  
-  meal_plan.save(edit_plan)
+@router.get('/', response_model=list[Meal])
+def list_meals(db: sqlite3.Connection = Depends(get_db)):
+    return [row_to_meal(r) for r in db.execute("SELECT * FROM meals").fetchall()]
 
-@router.delete('/delete/{meal_id}', status_code=204)
-def delete_meal(meal_id: str):
-  def del_meal(existing_plan):
-    if meal_id not in existing_plan:
-      raise HTTPException(status_code=404, detail=f'Meal ID: {meal_id} could not be found to delete')
-    del existing_plan[meal_id]
-    return jsonable_encoder(existing_plan)
 
-  meal_plan.save(del_meal)
+@router.get("/{meal_id}", response_model=Meal)
+def get_meal(meal_id: int, db: sqlite3.Connection = Depends(get_db)):
+    row = db.execute("SELECT * FROM meals WHERE id = ?", (meal_id,)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Meal not found")
+    return row_to_meal(row)
 
-@router.get('/archive', response_model=Archive)
-def get_archive() -> Archive:
-  return jsonable_encoder(meal_archive.read())
 
-@router.put('/archive/add/{archive_id}', status_code=201)
-def add_meals_to_archive(archive_id: str, archive: ArchiveEntry):
-  def add_to_archive(existing_archive):
-    if archive_id in existing_archive:
-      raise HTTPException(status_code=409, detail=f'Archive ID: {archive_id} already exists')
-    return deep_update(existing_archive, jsonable_encoder({ archive_id: archive }))
+@router.patch("/{meal_id}", response_model=Meal)
+def update_meal(
+    meal_id: int, payload: PartialMeal, db: sqlite3.Connection = Depends(get_db)
+):
+    raw = payload.model_dump()
+    # Filter out None values.
+    fields = {k: v for k, v in raw.items() if v is not None}
+    if not fields:
+        raise HTTPException(status_code=400, detail="No fields provided to update")
 
-  meal_archive.save(add_to_archive)
+    set_clause = ", ".join(f"{col} = ?" for col in fields)
+    db.execute(
+        f"UPDATE meals SET {set_clause} WHERE id = ?",
+        [*fields.values(), meal_id],
+    )
+    db.commit()
 
-@router.delete('/archive/delete/{archive_id}', status_code=204)
-def delete_archive(archive_id: str):
-  def del_archive(existing_archive):
-    if archive_id not in existing_archive:
-      raise HTTPException(status_code=404, detail=f'Archive ID: {archive_id} could not be found to delete')
-    del existing_archive[archive_id]
-    return jsonable_encoder(existing_archive)
+    row = db.execute("SELECT * FROM meals WHERE id = ?", (meal_id,)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Meal not found")
+    return row_to_meal(row)
 
-  meal_archive.save(del_archive)
+
+@router.delete("/{meal_id}", status_code=204)
+def delete_meal(meal_id: int, db: sqlite3.Connection = Depends(get_db)):
+    result = db.execute("DELETE FROM meals WHERE id = ?", (meal_id,))
+    db.commit()
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Meal not found")
