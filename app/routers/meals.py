@@ -1,7 +1,7 @@
-from app.database import get_db
+from app.database import DatabaseConnectionDep
 import sqlite3
 from app.services.meals.models import Meal, PartialMeal
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 
 
 router = APIRouter(
@@ -29,7 +29,7 @@ def row_to_meal(row: sqlite3.Row) -> Meal:
 
 
 @router.post("/", response_model=Meal, status_code=201)
-def create_meal(payload: Meal, db: sqlite3.Connection = Depends(get_db)):
+def create_meal(payload: Meal, db: DatabaseConnectionDep):
     cursor = db.execute(
         "INSERT INTO meals (name, datetime, mealTime) VALUES (?, ?, ?)",
         (payload.name, payload.datetime, payload.mealTime),
@@ -40,12 +40,12 @@ def create_meal(payload: Meal, db: sqlite3.Connection = Depends(get_db)):
 
 
 @router.get('/', response_model=list[Meal])
-def list_meals(db: sqlite3.Connection = Depends(get_db)):
+def list_meals(db: DatabaseConnectionDep):
     return [row_to_meal(r) for r in db.execute("SELECT * FROM meals").fetchall()]
 
 
 @router.get("/{meal_id}", response_model=Meal)
-def get_meal(meal_id: int, db: sqlite3.Connection = Depends(get_db)):
+def get_meal(meal_id: int, db: DatabaseConnectionDep):
     row = db.execute("SELECT * FROM meals WHERE id = ?", (meal_id,)).fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail="Meal not found")
@@ -54,7 +54,7 @@ def get_meal(meal_id: int, db: sqlite3.Connection = Depends(get_db)):
 
 @router.patch("/{meal_id}", response_model=Meal)
 def update_meal(
-    meal_id: int, payload: PartialMeal, db: sqlite3.Connection = Depends(get_db)
+    meal_id: int, payload: PartialMeal, db: DatabaseConnectionDep
 ):
     raw = payload.model_dump()
     # Filter out None values.
@@ -76,7 +76,7 @@ def update_meal(
 
 
 @router.delete("/{meal_id}", status_code=204)
-def delete_meal(meal_id: int, db: sqlite3.Connection = Depends(get_db)):
+def delete_meal(meal_id: int, db: DatabaseConnectionDep):
     result = db.execute("DELETE FROM meals WHERE id = ?", (meal_id,))
     db.commit()
     if result.rowcount == 0:

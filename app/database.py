@@ -1,7 +1,8 @@
+from fastapi import Depends
 from dotenv import load_dotenv
 import os
 import sqlite3
-from typing import Generator
+from typing import Generator, Annotated
 
 
 load_dotenv()
@@ -20,3 +21,5 @@ def get_db() -> Generator[sqlite3.Connection, None, None]:
         yield conn
     finally:
         conn.close()
+
+DatabaseConnectionDep = Annotated[sqlite3.Connection, Depends(get_db)]

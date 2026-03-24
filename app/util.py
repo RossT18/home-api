@@ -115,5 +115,5 @@ def is_in_past(date: str) -> bool:
   date_obj = datetime.strptime(date, "%Y-%m-%d").date()
   return date_obj < get_now().date()
 
-def convert_ISO_to_dt(iso: str) -> Date:
+def convert_ISO_to_dt(iso: str) -> datetime:
   return datetime.strptime(iso, "%Y-%m-%d")

@@ -15,6 +15,7 @@ async def lifespan(app: FastAPI):
         # init_todos_table(conn)
         # init_users_table(conn)
         meals.init_meals_table(conn)
+        plants.init_plants_tables(conn)
         conn.commit()
     yield
     # Shutdown logic (e.g. closing a connection pool) would go here

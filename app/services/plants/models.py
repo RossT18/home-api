@@ -1,16 +1,16 @@
-from typing import Dict, Optional
-from pydantic import BaseModel, RootModel
+from typing import Optional
+from pydantic import BaseModel
 
 
 class Plant(BaseModel):
+  id: Optional[int] = None
   name: str
   iconName: str
   purchaseDate: str
   waterFrequency: int
   lightConditions: str
   waterHistory: list[str]
-  delayUntil: str
-PlantList = RootModel[Dict[str, Plant]]
+  delayUntil: Optional[str] = None
 
 class PartialPlant(BaseModel):
   name: Optional[str] = None
