@@ -7,7 +7,8 @@ from typing import Generator, Annotated
 
 load_dotenv()
 
-database_path = os.getenv('DATABASE_PATH', 'database.db')
+database_path = os.getenv("DATABASE_PATH", "database.db")
+
 
 def get_db() -> Generator[sqlite3.Connection, None, None]:
     """
@@ -21,5 +22,6 @@ def get_db() -> Generator[sqlite3.Connection, None, None]:
         yield conn
     finally:
         conn.close()
+
 
 DatabaseConnectionDep = Annotated[sqlite3.Connection, Depends(get_db)]

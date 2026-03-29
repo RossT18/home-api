@@ -4,27 +4,26 @@ from app.services.meals.models import Meal, PartialMeal
 from fastapi import APIRouter, HTTPException
 
 
-router = APIRouter(
-  prefix='/meals',
-  tags=['meals']
-)
+router = APIRouter(prefix="/meals", tags=["meals"])
+
 
 def init_meals_table(conn: sqlite3.Connection):
-    conn.execute('''
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS meals (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             datetime TEXT NOT NULL,
             mealTime TEXT NOT NULL
         );
-    ''')
+    """)
+
 
 def row_to_meal(row: sqlite3.Row) -> Meal:
     return Meal(
-        id=row['id'],
-        name=row['name'],
-        datetime=row['datetime'],
-        mealTime=row['mealTime']
+        id=row["id"],
+        name=row["name"],
+        datetime=row["datetime"],
+        mealTime=row["mealTime"],
     )
 
 
@@ -39,7 +38,7 @@ def create_meal(payload: Meal, db: DatabaseConnectionDep):
     return row_to_meal(row)
 
 
-@router.get('/', response_model=list[Meal])
+@router.get("/", response_model=list[Meal])
 def list_meals(db: DatabaseConnectionDep):
     return [row_to_meal(r) for r in db.execute("SELECT * FROM meals").fetchall()]
 
@@ -53,9 +52,7 @@ def get_meal(meal_id: int, db: DatabaseConnectionDep):
 
 
 @router.patch("/{meal_id}", response_model=Meal)
-def update_meal(
-    meal_id: int, payload: PartialMeal, db: DatabaseConnectionDep
-):
+def update_meal(meal_id: int, payload: PartialMeal, db: DatabaseConnectionDep):
     raw = payload.model_dump()
     # Filter out None values.
     fields = {k: v for k, v in raw.items() if v is not None}

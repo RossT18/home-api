@@ -9,37 +9,39 @@ from app.routers import bins, clock, disk_info, meals, plants, travel, uklife, w
 
 load_dotenv()
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     with sqlite3.connect(database_path) as conn:
         meals.init_meals_table(conn)
         plants.init_plants_tables(conn)
+        uklife.init_uklife_tables(conn)
         conn.commit()
     yield
     # Shutdown logic (e.g. closing a connection pool) would go here
 
-app = FastAPI(
-  title='Home API',
-  lifespan=lifespan
-)
 
-origins = ['*']
+app = FastAPI(title="Home API", lifespan=lifespan)
+
+origins = ["*"]
 
 app.add_middleware(
-  CORSMiddleware,  # ty:ignore[invalid-argument-type]
-  allow_origins=origins,
-  allow_credentials=True,
-  allow_methods=["*"],
-  allow_headers=["*"],
+    CORSMiddleware,  # ty:ignore[invalid-argument-type]
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
+
 
 @app.get("/")
 def read_root():
-  return health()
+    return health()
 
-@app.get('/health')
+
+@app.get("/health")
 def health():
-  return {"status": "healthy"}
+    return {"status": "healthy"}
 
 
 app.include_router(bins.router)
@@ -52,5 +54,6 @@ app.include_router(uklife.router)
 app.include_router(weather.router)
 
 if __name__ == "__main__":
-  import uvicorn
-  uvicorn.run(app, host="0.0.0.0", port=5100)
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=5100)
