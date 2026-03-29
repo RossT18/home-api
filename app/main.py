@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 from app.database import database_path
-from app.routers import bins, clock, disk_info, meals, plants, todos, travel, uklife, weather
+from app.routers import bins, clock, disk_info, meals, plants, travel, uklife, weather
 
 
 load_dotenv()
@@ -12,8 +12,6 @@ load_dotenv()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     with sqlite3.connect(database_path) as conn:
-        # init_todos_table(conn)
-        # init_users_table(conn)
         meals.init_meals_table(conn)
         plants.init_plants_tables(conn)
         conn.commit()
@@ -49,7 +47,6 @@ app.include_router(clock.router)
 app.include_router(disk_info.router)
 app.include_router(meals.router)
 app.include_router(plants.router)
-app.include_router(todos.router)
 app.include_router(travel.router)
 app.include_router(uklife.router)
 app.include_router(weather.router)
