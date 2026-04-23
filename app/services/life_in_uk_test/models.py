@@ -1,3 +1,4 @@
+import json
 from pydantic import BaseModel
 from enum import StrEnum
 
@@ -8,8 +9,7 @@ class QuestionFilter(StrEnum):
     UNANSWERED = "unanswered"
     INCORRECT_OR_UNANSWERED = "incorrect_or_unanswered"
 
-
-class Category(StrEnum):
+class CategoryEnum(StrEnum):
     A_LONG_AND_ILLUSTRIOUS_HISTORY = "a_long_and_illustrious_history"
     A_MODERN_THRIVING_SOCIETY = "a_modern_thriving_society"
     UK_GOVERNMENT_THE_LAW_AND_YOUR_ROLE = "uk_government_the_law_and_your_role"
@@ -17,49 +17,36 @@ class Category(StrEnum):
     WHAT_IS_THE_UK = "what_is_the_uk"
     EXAM_QUESTIONS = "exam_questions"
 
-    def get_friendly_name(self) -> str:
-        """
-        Get a friendly name for the category.
-        """
-        return {
-            self.A_LONG_AND_ILLUSTRIOUS_HISTORY: "A long and illustrious history",
-            self.A_MODERN_THRIVING_SOCIETY: "A modern thriving society",
-            self.UK_GOVERNMENT_THE_LAW_AND_YOUR_ROLE: "UK government, the law and your role",
-            self.THE_VALUES_AND_PRINCIPLES_OF_THE_UK: "The values and principles of the UK",
-            self.WHAT_IS_THE_UK: "What is the UK",
-            self.EXAM_QUESTIONS: "Exam questions",
-        }.get(self, "Unknown Category")
-
-    def is_file(self) -> bool:
-        return {
-            self.A_LONG_AND_ILLUSTRIOUS_HISTORY: False,
-            self.A_MODERN_THRIVING_SOCIETY: False,
-            self.UK_GOVERNMENT_THE_LAW_AND_YOUR_ROLE: False,
-            self.THE_VALUES_AND_PRINCIPLES_OF_THE_UK: True,
-            self.WHAT_IS_THE_UK: True,
-            self.EXAM_QUESTIONS: True,
-        }.get(self, False)
-
+class Category(BaseModel):
+    id: int
+    name: CategoryEnum
+    friendly_name: str
 
 class Answer(BaseModel):
     """List of options and text explanation."""
-
     options: list[str]
     text: str
 
+    def load_from_json(json_str: str) -> 'Answer':
+        data = json.loads(json_str)
+        
+        options = data.get("options", [])
+        if "," in options:
+            options = [opt.strip() for opt in options.split(",")]
+        elif isinstance(options, str):
+            options = [options.strip()]
+
+        text = data.get("text", "")
+        return Answer(options=options, text=text)
 
 class Question(BaseModel):
-    category: Category
-    text: str
-    options: dict[str, str]
-
-
-class QuestionAnswer(BaseModel):
-    identifier: str
-    question: Question
+    id: int
     answer: Answer
+    category: int
+    options: dict[str, str]
+    question: str
 
-
-class RawResults(BaseModel):
-    answers: str
-    dt: str
+class Result(BaseModel):
+    question_id: int
+    correct: bool
+    datetime: str
