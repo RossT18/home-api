@@ -5,5 +5,7 @@ data/
 .vscode/
 .ruff_cache/
 .venv/
+build/
+*.egg-info/
 
 *.db

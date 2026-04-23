@@ -74,9 +74,7 @@ def deep_read_json_files(parent_folder: str) -> list[dict]:
                     continue
     return all_data
 
-    
-
-if __name__ == "__main__":
+def main():
     db_gen = get_db()
     conn = next(db_gen)
     init_uklife_tables(conn)
@@ -136,3 +134,6 @@ if __name__ == "__main__":
 
     conn.commit()
     db_gen.close()
+
+if __name__ == "__main__":
+    main()
