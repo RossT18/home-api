@@ -12,7 +12,7 @@ def init_meals_table(conn: sqlite3.Connection):
         CREATE TABLE IF NOT EXISTS meals (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            datetime TEXT NOT NULL,
+            date TEXT NOT NULL,
             mealTime TEXT NOT NULL
         );
     """)
@@ -22,7 +22,7 @@ def row_to_meal(row: sqlite3.Row) -> Meal:
     return Meal(
         id=row["id"],
         name=row["name"],
-        datetime=row["datetime"],
+        date=row["date"],
         mealTime=row["mealTime"],
     )
 
@@ -30,8 +30,8 @@ def row_to_meal(row: sqlite3.Row) -> Meal:
 @router.post("/", response_model=Meal, status_code=201)
 def create_meal(payload: Meal, db: DatabaseConnectionDep):
     cursor = db.execute(
-        "INSERT INTO meals (name, datetime, mealTime) VALUES (?, ?, ?)",
-        (payload.name, payload.datetime, payload.mealTime),
+        "INSERT INTO meals (name, date, mealTime) VALUES (?, ?, ?)",
+        (payload.name, payload.date, payload.mealTime),
     )
     db.commit()
     row = db.execute("SELECT * FROM meals WHERE id = ?", (cursor.lastrowid,)).fetchone()
