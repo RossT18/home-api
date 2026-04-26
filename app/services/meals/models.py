@@ -1,22 +1,16 @@
-from typing import Dict, Optional
-from pydantic import BaseModel, RootModel
+from typing import Optional
+from pydantic import BaseModel
 
 
 class Meal(BaseModel):
-  name: str
-  date: str
-  mealTime: str
+    # id is optional for input (created by the DB) but present on stored rows
+    id: Optional[int] = None
+    name: str
+    date: str
+    mealTime: str
 
-MealPlan = RootModel[Dict[str, Meal]]
 
 class PartialMeal(Meal):
-  name: Optional[str] = None
-  date: Optional[str] = None
-  mealTime: Optional[str] = None
-
-class ArchiveEntry(BaseModel):
-  minDate: str
-  maxDate: str
-  mealPlan: MealPlan
-
-Archive = RootModel[Dict[str, ArchiveEntry]]
+    name: Optional[str] = None
+    date: Optional[str] = None
+    mealTime: Optional[str] = None

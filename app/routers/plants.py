@@ -1,118 +1,154 @@
-from app.services.plants.models import PlantList, Plant, PartialPlant, WaterEvent, DelayEvent
+from app.database import DatabaseConnectionDep
+import sqlite3
+from app.services.plants.models import Plant, PartialPlant, WaterEvent, DelayEvent
 from fastapi import APIRouter, HTTPException
-from fastapi.encoders import jsonable_encoder
-from pydantic.utils import deep_update
-from app.cache import CachedValue
 
 from datetime import timedelta
 from app.util import convert_ISO_to_dt
 
-router = APIRouter(
-  prefix='/plants',
-  tags=['plants']
-)
+router = APIRouter(prefix="/plants", tags=["plants"])
 
-plants = CachedValue('plants')
 
-@router.get('/', response_model=PlantList)
-def get_plants():
-  return jsonable_encoder(plants.read())
+def init_plants_tables(conn: sqlite3.Connection):
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS water_plant_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            plant_id INTEGER NOT NULL,
+            date TEXT NOT NULL,
+            FOREIGN KEY (plant_id) REFERENCES plants(id)
+        );
+    """)
 
-@router.get('/plant/{plant_id}', response_model=Plant)
-def get_plant(plant_id: str):
-  existing_plants = plants.read()
-  if plant_id not in existing_plants:
-    raise HTTPException(status_code=404, detail=f'Plant ID: {plant_id} could not be found to get')
-  
-  return jsonable_encoder(existing_plants[plant_id])
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS plants (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            iconName TEXT NOT NULL,
+            purchaseDate TEXT NOT NULL,
+            waterFrequency INTEGER NOT NULL,
+            lightConditions TEXT NOT NULL,
+            delayUntil TEXT
+        );
+    """)
 
-@router.put('/add/{plant_id}', status_code=201)
-def add_plant(plant_id: str, plant: Plant):
-  def add_to_plants(existing_plants):
-    if plant_id in existing_plants:
-      raise HTTPException(status_code=409, detail=f'Plant ID: {plant_id} already exists')
-    newPlantWithHistory = Plant(
-      name=plant.name,
-      iconName=plant.iconName,
-      purchaseDate=plant.purchaseDate,
-      waterFrequency=plant.waterFrequency,
-      lightConditions=plant.lightConditions,
-      waterHistory=plant.waterHistory,
-      delayUntil=plant.delayUntil
+
+def get_plant_water_history(plant_id: int, db: sqlite3.Connection) -> list[str]:
+    rows = db.execute(
+        "SELECT date FROM water_plant_events WHERE plant_id = ?", (plant_id,)
+    ).fetchall()
+    return [row["date"] for row in rows]
+
+
+def row_to_plant(row: sqlite3.Row, db: sqlite3.Connection) -> Plant:
+    return Plant(
+        id=row["id"],
+        name=row["name"],
+        iconName=row["iconName"],
+        purchaseDate=row["purchaseDate"],
+        waterFrequency=row["waterFrequency"],
+        lightConditions=row["lightConditions"],
+        delayUntil=row["delayUntil"],
+        waterHistory=get_plant_water_history(row["id"], db),
     )
-    return deep_update(existing_plants, jsonable_encoder({ plant_id: newPlantWithHistory }))
 
-  plants.save(add_to_plants)
 
-@router.patch('/update/{plant_id}')
-def edit_plant(plant_id: str, plant: PartialPlant):
-  def edit_plants(existing_plants):
-    if plant_id not in existing_plants:
-      raise HTTPException(status_code=404, detail=f'Plant ID: {plant_id} could not be found to update')
-    stored_plant_model = Plant(**existing_plants[plant_id])
-    update_plant_data = plant.model_dump(exclude_unset=True)
-    updated_plant = stored_plant_model.model_copy(update=update_plant_data)
-    return deep_update(existing_plants, jsonable_encoder({ plant_id: updated_plant }))
-  
-  plants.save(edit_plants)
+@router.post("/", response_model=Plant, status_code=201)
+def create_plant(payload: Plant, db: DatabaseConnectionDep):
+    cursor = db.execute(
+        "INSERT INTO plants (name, iconName, purchaseDate, waterFrequency, lightConditions, delayUntil) VALUES (?, ?, ?, ?, ?, ?)",
+        (
+            payload.name,
+            payload.iconName,
+            payload.purchaseDate,
+            payload.waterFrequency,
+            payload.lightConditions,
+            payload.delayUntil,
+        ),
+    )
+    db.commit()
+    row = db.execute(
+        "SELECT * FROM plants WHERE id = ?", (cursor.lastrowid,)
+    ).fetchone()
+    return row_to_plant(row, db)
 
-@router.delete('/delete/{plant_id}', status_code=204)
-def delete_plant(plant_id: str):
-  def del_plant(existing_plant):
-    if plant_id not in existing_plant:
-      raise HTTPException(status_code=404, detail=f'Plant ID: {plant_id} could not be found to delete')
-    del existing_plant[plant_id]
-    return jsonable_encoder(existing_plant)
 
-  plants.save(del_plant)
+@router.get("/", response_model=list[Plant])
+def list_plants(db: DatabaseConnectionDep):
+    return [row_to_plant(r, db) for r in db.execute("SELECT * FROM plants").fetchall()]
 
-@router.post('/water/{plant_ids}')
-def water_plants(plant_ids: str, water_event: WaterEvent):
-  date = water_event.date
-  def internal_water_plant(existing_plants: PlantList):
-    plant_ids_list = [plant_id.strip() for plant_id in plant_ids.split(',')]
-    valid_plant_ids = [plant_id for plant_id in plant_ids_list if plant_id in existing_plants]
 
-    watered_plant_list: PlantList = {}
+@router.get("/{plant_id}", response_model=Plant)
+def get_plant(plant_id: int, db: DatabaseConnectionDep):
+    row = db.execute("SELECT * FROM plants WHERE id = ?", (plant_id,)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Plant not found")
+    return row_to_plant(row, db)
+
+
+@router.patch("/{plant_id}", response_model=Plant)
+def update_plant(plant_id: int, payload: PartialPlant, db: DatabaseConnectionDep):
+    raw = payload.model_dump()
+    # Filter out None values.
+    fields = {k: v for k, v in raw.items() if v is not None}
+    if not fields:
+        raise HTTPException(status_code=400, detail="No fields provided to update")
+
+    set_clause = ", ".join(f"{col} = ?" for col in fields)
+    db.execute(
+        f"UPDATE plants SET {set_clause} WHERE id = ?",
+        [*fields.values(), plant_id],
+    )
+    db.commit()
+
+    row = db.execute("SELECT * FROM plants WHERE id = ?", (plant_id,)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Plant not found")
+    return row_to_plant(row, db)
+
+
+@router.delete("/{plant_id}", status_code=204)
+def delete_plant(plant_id: int, db: DatabaseConnectionDep):
+    db.execute("DELETE FROM water_plant_events WHERE plant_id = ?", (plant_id,))
+    result = db.execute("DELETE FROM plants WHERE id = ?", (plant_id,))
+    db.commit()
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Plant not found")
+
+
+@router.post("/water/{plant_ids}")
+def water_plants(plant_ids: str, water_event: WaterEvent, db: DatabaseConnectionDep):
+    date = water_event.date
+    plant_ids_list = [plant_id.strip() for plant_id in plant_ids.split(",")]
+    valid_plant_ids = []
+    for plant_id in plant_ids_list:
+        row = db.execute("SELECT * FROM plants WHERE id = ?", (plant_id,)).fetchone()
+        if row is not None:
+            valid_plant_ids.append(plant_id)
+
     for plant_id in valid_plant_ids:
-      stored_plant = existing_plants[plant_id]
-      if 'waterHistory' not in stored_plant:
-        stored_plant['waterHistory'] = []
-      stored_plant_model = Plant(**stored_plant)
-      if date not in stored_plant_model.waterHistory:
-        stored_plant_model.waterHistory.append(date)
-        stored_plant_model.delayUntil = '' # Reset delay if plant is watered
-      else:
-        # Already watered on this day, so delete it to make un-watering available incase used by mistake
-        stored_plant_model.waterHistory.remove(date)
-      
-      watered_plant_list[plant_id] = stored_plant_model
+        db.execute(
+            "INSERT INTO water_plant_events (plant_id, date) VALUES (?, ?)",
+            (plant_id, date),
+        )
+    db.commit()
 
-    return deep_update(existing_plants, jsonable_encoder(watered_plant_list))
 
-  plants.save(internal_water_plant)
+@router.post("/delay/{plant_ids}")
+def delay_plant_water(
+    plant_ids: str, delay_event: DelayEvent, db: DatabaseConnectionDep
+):
+    plant_ids_list = [plant_id.strip() for plant_id in plant_ids.split(",")]
 
-@router.post('/delay/{plant_ids}')
-def delay_plant_water(plant_ids: str, delay_event: DelayEvent):
-  days = delay_event.days
-  date = delay_event.date
+    plant_ids_placeholder = ",".join("?" * len(plant_ids_list))
 
-  def internal_delay_plant_water(existing_plants: PlantList):
-    plant_ids_list = [plant_id.strip() for plant_id in plant_ids.split(',')]
-    valid_plant_ids = [plant_id for plant_id in plant_ids_list if plant_id in existing_plants]
-  
-    delayed_plant_list: PlantList = {}
-    for plant_id in valid_plant_ids:
-      stored_plant = existing_plants[plant_id]
-      if 'delayUntil' not in stored_plant:
-        stored_plant['delayUntil'] = ''
-      stored_plant_model = Plant(**stored_plant)
-      
-      new_delay_date = convert_ISO_to_dt(date) + timedelta(days=days)    
-      stored_plant_model.delayUntil = new_delay_date.strftime("%Y-%m-%d")
+    delay_until_date = convert_ISO_to_dt(delay_event.date) + timedelta(
+        days=delay_event.days
+    )
+    delay_until_date_str = delay_until_date.strftime("%Y-%m-%d")
 
-      delayed_plant_list[plant_id] = stored_plant_model
+    db.execute(
+        f"UPDATE plants SET delayUntil = ? WHERE id IN ({plant_ids_placeholder})",
+        (delay_until_date_str, *plant_ids_list),
+    )
 
-    return deep_update(existing_plants, jsonable_encoder(delayed_plant_list))
-
-  plants.save(internal_delay_plant_water)
+    db.commit()

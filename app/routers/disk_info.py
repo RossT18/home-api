@@ -4,12 +4,9 @@ from fastapi import APIRouter
 from fastapi.encoders import jsonable_encoder
 
 
-router = APIRouter(
-  prefix='/disk',
-  tags=['disk']
-)
+router = APIRouter(prefix="/disk", tags=["disk"])
 
 
-@router.get('/', response_model=DiskSpace)
+@router.get("/", response_model=DiskSpace)
 def get_disk_info() -> DiskSpace:
-  return jsonable_encoder(get_disk_space())
+    return jsonable_encoder(get_disk_space())
