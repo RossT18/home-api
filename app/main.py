@@ -18,7 +18,6 @@ async def lifespan(app: FastAPI):
         uklife.init_uklife_tables(conn)
         conn.commit()
     yield
-    # Shutdown logic (e.g. closing a connection pool) would go here
 
 
 app = FastAPI(title="Home API", lifespan=lifespan)

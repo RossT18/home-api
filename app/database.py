@@ -19,8 +19,9 @@ def get_db() -> Generator[sqlite3.Connection, None, None]:
     conn = sqlite3.connect(database_path)
     conn.row_factory = sqlite3.Row
     try:
-        yield conn
+        yield conn # Give connection to route handler
     finally:
+        # Close connection after the request is finished
         conn.close()
 
 
