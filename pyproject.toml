@@ -15,5 +15,5 @@ dependencies = [
 dev = ["ruff>=0.14.11", "ty>=0.0.10"]
 
 [project.scripts]
-migrate-legacy-data = "app.scripts.migrate_legacy_data:main"
+migrate-legacy-data = "app.migrations.migrate_legacy_data:main"
 populate-life-in-uk-test-db = "app.services.life_in_uk_test.populate_database:main"

@@ -24,11 +24,11 @@ A set of utilities relevant to a Home, used by the Home Portal project.
   - `main.py` - Main logic for a service
   - `models.py` - Models for a specific service. Used by the service and routes
 - `resources/` - Static resources used by services
-- `scripts/` - Python scripts
+- `migrations/` - Database migration Python scripts
 
 **/** (root)
 
-- `scripts/` - Shell scripts for simple docker deployment
+- `scripts/` - Shell scripts for simple Docker deployment
 
 ## Development
 
