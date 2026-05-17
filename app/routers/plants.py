@@ -87,22 +87,34 @@ def get_plant(plant_id: int, db: DatabaseConnectionDep):
 
 @router.patch("/{plant_id}", response_model=Plant)
 def update_plant(plant_id: int, payload: PartialPlant, db: DatabaseConnectionDep):
-    raw = payload.model_dump()
-    # Filter out None values.
-    fields = {k: v for k, v in raw.items() if v is not None}
-    if not fields:
-        raise HTTPException(status_code=400, detail="No fields provided to update")
+    fields = payload.model_dump(exclude_unset=True)
+    has_water_history = "waterHistory" in fields
+    water_history = fields.pop("waterHistory", None)
 
-    set_clause = ", ".join(f"{col} = ?" for col in fields)
-    db.execute(
-        f"UPDATE plants SET {set_clause} WHERE id = ?",
-        [*fields.values(), plant_id],
-    )
-    db.commit()
+    if not fields and not has_water_history:
+        raise HTTPException(status_code=400, detail="No fields provided to update")
 
     row = db.execute("SELECT * FROM plants WHERE id = ?", (plant_id,)).fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail="Plant not found")
+
+    if fields:
+        set_clause = ", ".join(f"{col} = ?" for col in fields)
+        db.execute(
+            f"UPDATE plants SET {set_clause} WHERE id = ?",
+            [*fields.values(), plant_id],
+        )
+
+    if has_water_history and water_history is not None:
+        db.execute("DELETE FROM water_plant_events WHERE plant_id = ?", (plant_id,))
+        db.executemany(
+            "INSERT INTO water_plant_events (plant_id, date) VALUES (?, ?)",
+            [(plant_id, water_date) for water_date in water_history],
+        )
+
+    db.commit()
+
+    row = db.execute("SELECT * FROM plants WHERE id = ?", (plant_id,)).fetchone()
     return row_to_plant(row, db)
 
 
@@ -126,10 +138,21 @@ def water_plants(plant_ids: str, water_event: WaterEvent, db: DatabaseConnection
             valid_plant_ids.append(plant_id)
 
     for plant_id in valid_plant_ids:
-        db.execute(
-            "INSERT INTO water_plant_events (plant_id, date) VALUES (?, ?)",
+        existing_water_event = db.execute(
+            "SELECT * FROM water_plant_events WHERE plant_id = ? AND date = ?",
             (plant_id, date),
-        )
+        ).fetchone()
+
+        if existing_water_event is not None:
+            db.execute(
+                "DELETE FROM water_plant_events WHERE plant_id = ? AND date = ?",
+                (plant_id, date),
+            )
+        else:
+            db.execute(
+                "INSERT INTO water_plant_events (plant_id, date) VALUES (?, ?)",
+                (plant_id, date),
+            )
     db.commit()
 
 
