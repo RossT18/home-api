@@ -16,7 +16,7 @@ def get_db() -> Generator[sqlite3.Connection, None, None]:
     row_factory lets route handlers access columns by name instead of index.
     The connection is always closed when the request finishes.
     """
-    conn = sqlite3.connect(database_path)
+    conn = sqlite3.connect(database_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     try:
         yield conn # Give connection to route handler
