@@ -1,1 +1,1 @@
-docker run -d --name home-api-container --restart=unless-stopped -v ./data:/code/data -p 5100:5100 --env-file .env home-api-image
+docker run -d --name home-api-container --restart=unless-stopped -v ./data:/data -p 5100:5100 --env-file .env home-api-image
