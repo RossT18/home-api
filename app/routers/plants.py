@@ -153,6 +153,14 @@ def water_plants(plant_ids: str, water_event: WaterEvent, db: DatabaseConnection
                 "INSERT INTO water_plant_events (plant_id, date) VALUES (?, ?)",
                 (plant_id, date),
             )
+            db.execute(
+                """
+                UPDATE plants
+                SET delayUntil = NULL
+                WHERE id = ? AND delayUntil IS NOT NULL AND delayUntil <= ?
+                """,
+                (plant_id, date),
+            )
     db.commit()
 
 
